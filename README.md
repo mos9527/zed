@@ -1,5 +1,7 @@
 # Zed Custom
 
+![zedc Icon](./crates/zed/resources/app-icon.png)
+
 A personal fork of [Zed](https://github.com/zed-industries/zed), a high-performance, multiplayer code editor from the creators of [Atom](https://github.com/atom/atom) and [Tree-sitter](https://github.com/tree-sitter/tree-sitter).
 
 ## Installation
