@@ -204,7 +204,7 @@ pub struct WorktreeSettingsContent {
     /// activate on first use.
     /// `0` means no limit and activates all git repositories immediately.
     ///
-    /// Default: 5
+    /// Default: 0
     pub file_scan_depth: Option<u32>,
 
     /// Treat the files matching these globs as `.env` files.

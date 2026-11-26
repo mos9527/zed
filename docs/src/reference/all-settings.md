@@ -2941,11 +2941,13 @@ Inherited patterns are inserted at `"..."`, and duplicates keep their first occu
 
 - Setting: `file_scan_depth`
 - Description: Maximum directory depth that Zed eagerly indexes outside of git repositories. Directories at this depth or deeper are indexed on demand: when expanded in the project panel or when a file inside them is opened. Contents of directories that were not indexed yet are invisible to the file finder and project search. When directories get deferred, the status bar of the affected window shows a brief "Partial file index" message. Set to `0` to always index everything eagerly and activate all git repositories immediately.
-- Default: `5`
+- Default: `0` (unlimited)
+
+To cap eager indexing, set a positive depth in your user or project settings.
 
 ```json [settings]
 {
-  "file_scan_depth": 0
+  "file_scan_depth": 5
 }
 ```
 
