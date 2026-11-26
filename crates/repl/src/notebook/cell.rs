@@ -9,7 +9,7 @@ use gpui::{
 };
 use jupyter_protocol::{JupyterMessage, JupyterMessageContent};
 use language::{Buffer, Language, LanguageRegistry};
-use markdown::{Markdown, MarkdownElement, MarkdownFont, MarkdownStyle};
+use markdown::{Markdown, MarkdownElement, MarkdownFont, MarkdownOptions, MarkdownStyle};
 use nbformat::v4::{CellId, CellMetadata, CellType};
 use settings::Settings as _;
 use ui::{CommonAnimationExt, IconButtonShape, prelude::*};
@@ -475,7 +475,18 @@ impl MarkdownCell {
             editor
         });
 
-        let markdown = cx.new(|cx| Markdown::new(source.clone().into(), None, None, cx));
+        let markdown = cx.new(|cx| {
+            Markdown::new_with_options(
+                source.clone().into(),
+                None,
+                None,
+                MarkdownOptions {
+                    render_math: true,
+                    ..Default::default()
+                },
+                cx,
+            )
+        });
 
         let editor_subscription =
             cx.subscribe(&editor, move |this, _editor, event, cx| match event {

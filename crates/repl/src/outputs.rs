@@ -45,6 +45,9 @@ use image::ImageView;
 mod markdown;
 use markdown::MarkdownView;
 
+mod latex;
+use latex::LatexView;
+
 mod table;
 use table::TableView;
 
@@ -66,12 +69,13 @@ use settings::Settings;
 /// When deciding what to render from a collection of mediatypes, we need to rank them in order of importance
 fn rank_mime_type(mimetype: &MediaType) -> usize {
     match mimetype {
-        MediaType::DataTable(_) => 7,
-        MediaType::Html(_) => 6,
-        MediaType::Json(_) => 5,
-        MediaType::Png(_) => 4,
-        MediaType::Jpeg(_) => 3,
-        MediaType::Markdown(_) => 2,
+        MediaType::DataTable(_) => 8,
+        MediaType::Html(_) => 7,
+        MediaType::Json(_) => 6,
+        MediaType::Png(_) => 5,
+        MediaType::Jpeg(_) => 4,
+        MediaType::Markdown(_) => 3,
+        MediaType::Latex(_) => 2,
         MediaType::Plain(_) => 1,
         // All other media types are not supported in Zed at this time
         _ => 0,
@@ -131,6 +135,11 @@ pub enum Output {
         content: Entity<MarkdownView>,
         display_id: Option<String>,
     },
+    Latex {
+        content: Entity<LatexView>,
+        data: Media,
+        display_id: Option<String>,
+    },
     Json {
         content: Entity<JsonView>,
         display_id: Option<String>,
@@ -159,6 +168,12 @@ impl Output {
                     },
                 ))
             }
+            Output::Latex { data, .. } => Some(nbformat::v4::Output::DisplayData(
+                nbformat::v4::DisplayData {
+                    data: data.clone(),
+                    metadata: serde_json::Map::new(),
+                },
+            )),
             Output::ErrorOutput(error_view) => {
                 let traceback_text = error_view.traceback.read(cx).full_text(cx);
                 let traceback_lines: Vec<String> =
@@ -254,6 +269,7 @@ impl Output {
         match self {
             Self::Plain { content, .. } => Some(content.clone().into_any_element()),
             Self::Markdown { content, .. } => Some(content.clone().into_any_element()),
+            Self::Latex { content, .. } => Some(content.clone().into_any_element()),
             Self::Stream { content, .. } => Some(content.clone().into_any_element()),
             Self::Image { content, .. } => Some(content.clone().into_any_element()),
             Self::Message(message) => Some(div().child(message.clone()).into_any_element()),
@@ -298,6 +314,9 @@ impl Output {
                     Self::render_output_controls(content.clone(), workspace, window, cx)
                 }
                 Self::Markdown { content, .. } => {
+                    Self::render_output_controls(content.clone(), workspace, window, cx)
+                }
+                Self::Latex { content, .. } => {
                     Self::render_output_controls(content.clone(), workspace, window, cx)
                 }
                 Self::Stream { content, .. } => {
@@ -383,6 +402,7 @@ impl Output {
             Output::Message(_) => None,
             Output::Table { display_id, .. } => display_id.clone(),
             Output::Markdown { display_id, .. } => display_id.clone(),
+            Output::Latex { display_id, .. } => display_id.clone(),
             Output::Json { display_id, .. } => display_id.clone(),
             Output::ClearOutputWaitMarker => None,
         }
@@ -413,6 +433,11 @@ impl Output {
                     display_id,
                 }
             }
+            Some(MediaType::Latex(source)) => Output::Latex {
+                content: cx.new(|cx| LatexView::new(source.clone().into(), cx)),
+                data: data.clone(),
+                display_id,
+            },
             Some(MediaType::Png(data)) | Some(MediaType::Jpeg(data)) => match ImageView::from(data)
             {
                 Ok(view) => Output::Image {
@@ -859,31 +884,24 @@ mod tests {
         let png = MediaType::Png(String::new());
         let jpeg = MediaType::Jpeg(String::new());
         let markdown = MediaType::Markdown(String::new());
+        let latex = MediaType::Latex(String::new());
         let plain = MediaType::Plain(String::new());
-
-        assert_eq!(rank_mime_type(&data_table), 7);
-        assert_eq!(rank_mime_type(&html), 6);
-        assert_eq!(rank_mime_type(&json), 5);
-        assert_eq!(rank_mime_type(&png), 4);
-        assert_eq!(rank_mime_type(&jpeg), 3);
-        assert_eq!(rank_mime_type(&markdown), 2);
-        assert_eq!(rank_mime_type(&plain), 1);
 
         assert!(rank_mime_type(&data_table) > rank_mime_type(&html));
         assert!(rank_mime_type(&html) > rank_mime_type(&json));
         assert!(rank_mime_type(&json) > rank_mime_type(&png));
         assert!(rank_mime_type(&png) > rank_mime_type(&jpeg));
         assert!(rank_mime_type(&jpeg) > rank_mime_type(&markdown));
-        assert!(rank_mime_type(&markdown) > rank_mime_type(&plain));
+        assert!(rank_mime_type(&markdown) > rank_mime_type(&latex));
+        assert!(rank_mime_type(&latex) > rank_mime_type(&plain));
+        assert!(rank_mime_type(&plain) > 0);
     }
 
     #[test]
     fn test_rank_mime_type_unsupported_returns_zero() {
         let svg = MediaType::Svg(String::new());
-        let latex = MediaType::Latex(String::new());
 
         assert_eq!(rank_mime_type(&svg), 0);
-        assert_eq!(rank_mime_type(&latex), 0);
     }
 
     async fn init_test(
@@ -913,6 +931,32 @@ mod tests {
         cx.update(|_window, cx| {
             cx.new(|cx| ExecutionView::new(ExecutionStatus::Queued, weak_workspace, cx))
         })
+    }
+
+    #[gpui::test]
+    async fn test_latex_output_round_trips_notebook_media(cx: &mut TestAppContext) {
+        let (mut cx, _) = init_test(cx).await;
+        let data = serde_json::json!({
+            "text/latex": [r"$\displaystyle \frac{1}{2}$"],
+            "text/plain": ["<IPython.core.display.Math object>"]
+        });
+        let media: Media = serde_json::from_value(data.clone()).expect("valid MIME bundle");
+
+        cx.update(|window, cx| {
+            let output = Output::new(&media, Some("formula".into()), window, cx);
+            assert!(matches!(output, Output::Latex { .. }));
+            assert_eq!(output.display_id().as_deref(), Some("formula"));
+
+            let Some(nbformat::v4::Output::DisplayData(saved)) = output.to_nbformat(cx) else {
+                panic!("expected a saved display output");
+            };
+            let saved = serde_json::to_value(saved).expect("serializable display output");
+            let saved_media: Media =
+                serde_json::from_value(saved["data"].clone()).expect("valid saved MIME bundle");
+            for mime_type in media.content {
+                assert!(saved_media.content.contains(&mime_type));
+            }
+        });
     }
 
     #[gpui::test]

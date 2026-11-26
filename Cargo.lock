@@ -15551,6 +15551,7 @@ dependencies = [
  "jupyter-zmq-client",
  "language",
  "languages",
+ "latex_render",
  "log",
  "markdown",
  "menu",
