@@ -1,21 +1,21 @@
-name: zed
-title: Zed
+name: zedc
+title: Zed Custom
 base: core26
 version: "$RELEASE_VERSION"
 summary: The editor for what's next
 description: |
-  Zed is a modern open-source code editor, built from the ground up in Rust with
+  Zed Custom is a modern open-source code editor, built from the ground up in Rust with
   a GPU-accelerated renderer. We help you build software faster than ever before.
 grade: "$SNAP_GRADE"
 confinement: classic
 compression: lzo
 website: https://zed.dev/
-source-code: https://github.com/zed-industries/zed
-issues: https://github.com/zed-industries/zed/issues
+source-code: https://github.com/mos9527/zed
+issues: https://github.com/mos9527/zed/issues
 contact: https://zed.dev/community-links#support-and-feedback
 
 parts:
-  zed:
+  zedc:
     plugin: dump
     source: "$ZED_TARBALL"
 
@@ -23,7 +23,7 @@ parts:
       # These renames seem to not be necessary, but it's tidier.
       bin: usr/bin
       libexec: usr/libexec
-      # snapcraft's desktop-file lint resolves a bare Icon=zed against the
+      # snapcraft's desktop-file lint resolves a bare Icon=zedc against the
       # hicolor theme only under usr/share/icons, so move the tarball's
       # icons there.
       share/icons: usr/share/icons
@@ -65,18 +65,18 @@ parts:
       - -usr/share/man
 
 apps:
-  zed:
-    command: usr/bin/zed
-    common-id: dev.zed.Zed
+  zedc:
+    command: usr/bin/zedc
+    common-id: $APP_ID
     # Menu integration: snapcraft copies this into meta/gui, rewrites Exec to
-    # the snap command and resolves the bare Icon=zed against the primed
+    # the snap command and resolves the bare Icon=zedc against the primed
     # hicolor icons; snapd then exports it to /var/lib/snapd/desktop/
     # applications on install. The tarball names its desktop entry after the
     # release channel's app id.
     desktop: share/applications/$APP_ID.desktop
     environment:
       ZED_BUNDLE_TYPE: snap
-      ZED_UPDATE_EXPLANATION: "Please use snap to update Zed."
+      ZED_UPDATE_EXPLANATION: "Please use snap to update Zed Custom."
       # snapcraft sets DF_1_NODEFLIB on all ELFs of the snap, which makes the
       # dynamic linker ignore /etc/ld.so.cache for them, and the Vulkan loader
       # dlopens ICD libraries by bare soname. Bundled sonames still resolve

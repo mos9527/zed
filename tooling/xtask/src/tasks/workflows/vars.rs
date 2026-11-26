@@ -56,6 +56,8 @@ secret!(DOCS_CONSENT_IO_INSTANCE);
 var!(AZURE_SIGNING_ACCOUNT_NAME);
 var!(AZURE_SIGNING_CERT_PROFILE_NAME);
 var!(AZURE_SIGNING_ENDPOINT);
+var!(MACOS_SIGNING_IDENTITY);
+var!(ZED_CUSTOM_APPX_PUBLISHER);
 
 pub fn bundle_envs(platform: Platform) -> Env {
     let env = Env::default()
@@ -68,11 +70,13 @@ pub fn bundle_envs(platform: Platform) -> Env {
         Platform::Mac => env
             .add("MACOS_CERTIFICATE", MACOS_CERTIFICATE)
             .add("MACOS_CERTIFICATE_PASSWORD", MACOS_CERTIFICATE_PASSWORD)
+            .add("MACOS_SIGNING_IDENTITY", MACOS_SIGNING_IDENTITY)
             .add("APPLE_NOTARIZATION_KEY", APPLE_NOTARIZATION_KEY)
             .add("APPLE_NOTARIZATION_KEY_ID", APPLE_NOTARIZATION_KEY_ID)
             .add("APPLE_NOTARIZATION_ISSUER_ID", APPLE_NOTARIZATION_ISSUER_ID),
         Platform::Windows => env
             .add("AZURE_TENANT_ID", AZURE_SIGNING_TENANT_ID)
+            .add("ZED_CUSTOM_APPX_PUBLISHER", ZED_CUSTOM_APPX_PUBLISHER)
             .add("AZURE_CLIENT_ID", AZURE_SIGNING_CLIENT_ID)
             .add("AZURE_CLIENT_SECRET", AZURE_SIGNING_CLIENT_SECRET)
             .add("ACCOUNT_NAME", AZURE_SIGNING_ACCOUNT_NAME)
@@ -371,14 +375,14 @@ impl serde::Serialize for WorkflowSecret {
 
 pub mod assets {
     // NOTE: these asset names also exist in the zed.dev codebase.
-    pub const MAC_AARCH64: &str = "Zed-aarch64.dmg";
-    pub const MAC_X86_64: &str = "Zed-x86_64.dmg";
-    pub const LINUX_AARCH64: &str = "zed-linux-aarch64.tar.gz";
-    pub const LINUX_X86_64: &str = "zed-linux-x86_64.tar.gz";
+    pub const MAC_AARCH64: &str = "ZedCustom-aarch64.dmg";
+    pub const MAC_X86_64: &str = "ZedCustom-x86_64.dmg";
+    pub const LINUX_AARCH64: &str = "zedc-linux-aarch64.tar.gz";
+    pub const LINUX_X86_64: &str = "zedc-linux-x86_64.tar.gz";
     pub const BWRAP_LINUX_AARCH64: &str = "bwrap-linux-aarch64.gz";
     pub const BWRAP_LINUX_X86_64: &str = "bwrap-linux-x86_64.gz";
-    pub const WINDOWS_X86_64: &str = "Zed-x86_64.exe";
-    pub const WINDOWS_AARCH64: &str = "Zed-aarch64.exe";
+    pub const WINDOWS_X86_64: &str = "ZedCustom-x86_64.exe";
+    pub const WINDOWS_AARCH64: &str = "ZedCustom-aarch64.exe";
 
     pub const REMOTE_SERVER_MAC_AARCH64: &str = "zed-remote-server-macos-aarch64.gz";
     pub const REMOTE_SERVER_MAC_X86_64: &str = "zed-remote-server-macos-x86_64.gz";

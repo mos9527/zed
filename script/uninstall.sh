@@ -1,158 +1,64 @@
 #!/usr/bin/env sh
 set -eu
 
-# Uninstalls Zed that was installed using the install.sh script
+channel="${ZED_CHANNEL:-stable}"
+case "$channel" in
+    stable) suffix=""; label="" ;;
+    nightly) suffix="-nightly"; label=" Nightly" ;;
+    preview) suffix="-preview"; label=" Preview" ;;
+    dev) suffix="-dev"; label=" Dev" ;;
+    *) echo "Unknown release channel: $channel" >&2; exit 1 ;;
+esac
 
-check_remaining_installations() {
-    platform="$(uname -s)"
-    if [ "$platform" = "Darwin" ]; then
-        # Check for any Zed variants in /Applications
-        remaining=$(ls -d /Applications/Zed*.app 2>/dev/null | wc -l)
-        [ "$remaining" -eq 0 ]
-    else
-        # Check for any Zed variants in ~/.local
-        remaining=$(ls -d "$HOME/.local/zed"*.app 2>/dev/null | wc -l)
-        [ "$remaining" -eq 0 ]
+remove_link() {
+    if [ -L "$1" ] && [ "$(readlink "$1")" = "$2" ]; then
+        rm -f "$1"
     fi
 }
 
-prompt_remove_preferences() {
-    printf "Do you want to keep your Zed preferences? [Y/n] "
-    read -r response
-    case "$response" in
-        [nN]|[nN][oO])
-            rm -rf "$HOME/.config/zed"
-            echo "Preferences removed."
-            ;;
-        *)
-            echo "Preferences kept."
-            ;;
-    esac
-}
+case "$(uname -s)" in
+    Linux)
+        app_dir="$HOME/.local/zedc$suffix.app"
+        data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/zedc"
+        config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/zedc"
+        app_id="$(printf '%s' "io.github.mos9527.ZedCustom$label" | tr ' ' '-')"
 
-main() {
-    platform="$(uname -s)"
-    channel="${ZED_CHANNEL:-stable}"
+        rm -rf "$app_dir" "$data_dir/db/0-$channel"
+        rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/applications/$app_id.desktop" "$data_dir/zedc-$channel.sock"
+        remove_link "$HOME/.local/bin/zedc" "$app_dir/bin/zedc"
+        set -- "$HOME"/.local/zedc*.app
+        ;;
+    Darwin)
+        app_dir="/Applications/Zed Custom$label.app"
+        data_dir="$HOME/Library/Application Support/ZedC"
+        config_dir="$HOME/.config/zedc"
+        app_id="$(printf '%s' "io.github.mos9527.ZedCustom$label" | tr ' ' '-')"
 
-    if [ "$platform" = "Darwin" ]; then
-        platform="macos"
-    elif [ "$platform" = "Linux" ]; then
-        platform="linux"
-    else
-        echo "Unsupported platform $platform"
+        rm -rf "$app_dir" "$data_dir/db/0-$channel" \
+            "$HOME/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/$app_id.sfl"* \
+            "$HOME/Library/Caches/$app_id" "$HOME/Library/HTTPStorages/$app_id" \
+            "$HOME/Library/Preferences/$app_id.plist" "$HOME/Library/Saved Application State/$app_id.savedState"
+        remove_link "$HOME/.local/bin/zedc" "$app_dir/Contents/MacOS/zedc-cli"
+        remove_link "/usr/local/bin/zedc" "$app_dir/Contents/MacOS/zedc-cli"
+        set -- /Applications/"Zed Custom"*.app
+        ;;
+    *)
+        echo "Unsupported platform: $(uname -s)" >&2
         exit 1
+        ;;
+esac
+
+if [ ! -e "$1" ]; then
+    rm -rf "$data_dir"
+    if [ "$(uname -s)" = Darwin ]; then
+        rm -rf "$HOME/Library/Logs/ZedC"
     fi
-
-    "$platform"
-
-    echo "Zed has been uninstalled"
-}
-
-linux() {
-    suffix=""
-    if [ "$channel" != "stable" ]; then
-        suffix="-$channel"
+    printf "Do you want to keep your Zed Custom preferences? [Y/n] "
+    if read -r response; then
+        case "$response" in
+            [nN]|[nN][oO]) rm -rf "$config_dir" ;;
+        esac
     fi
+fi
 
-    appid=""
-    db_suffix="stable"
-    case "$channel" in
-      stable)
-        appid="dev.zed.Zed"
-        db_suffix="stable"
-        ;;
-      nightly)
-        appid="dev.zed.Zed-Nightly"
-        db_suffix="nightly"
-        ;;
-      preview)
-        appid="dev.zed.Zed-Preview"
-        db_suffix="preview"
-        ;;
-      dev)
-        appid="dev.zed.Zed-Dev"
-        db_suffix="dev"
-        ;;
-      *)
-        echo "Unknown release channel: ${channel}. Using stable app ID."
-        appid="dev.zed.Zed"
-        db_suffix="stable"
-        ;;
-    esac
-
-    # Remove the app directory
-    rm -rf "$HOME/.local/zed$suffix.app"
-
-    # Remove the binary symlink
-    rm -f "$HOME/.local/bin/zed"
-
-    # Remove the .desktop file
-    rm -f "$HOME/.local/share/applications/${appid}.desktop"
-
-    # Remove the database directory for this channel
-    rm -rf "$HOME/.local/share/zed/db/0-$db_suffix"
-
-    # Remove socket file
-    rm -f "$HOME/.local/share/zed/zed-$db_suffix.sock"
-
-    # Remove the entire Zed directory if no installations remain
-    if check_remaining_installations; then
-        rm -rf "$HOME/.local/share/zed"
-        prompt_remove_preferences
-    fi
-
-    rm -rf $HOME/.zed_server
-}
-
-macos() {
-    app="Zed.app"
-    db_suffix="stable"
-    app_id="dev.zed.Zed"
-    case "$channel" in
-      nightly)
-        app="Zed Nightly.app"
-        db_suffix="nightly"
-        app_id="dev.zed.Zed-Nightly"
-        ;;
-      preview)
-        app="Zed Preview.app"
-        db_suffix="preview"
-        app_id="dev.zed.Zed-Preview"
-        ;;
-      dev)
-        app="Zed Dev.app"
-        db_suffix="dev"
-        app_id="dev.zed.Zed-Dev"
-        ;;
-    esac
-
-    # Remove the app bundle
-    if [ -d "/Applications/$app" ]; then
-        rm -rf "/Applications/$app"
-    fi
-
-    # Remove the binary symlink
-    rm -f "$HOME/.local/bin/zed"
-
-    # Remove the database directory for this channel
-    rm -rf "$HOME/Library/Application Support/Zed/db/0-$db_suffix"
-
-    # Remove app-specific files and directories
-    rm -rf "$HOME/Library/Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments/$app_id.sfl"*
-    rm -rf "$HOME/Library/Caches/$app_id"
-    rm -rf "$HOME/Library/HTTPStorages/$app_id"
-    rm -rf "$HOME/Library/Preferences/$app_id.plist"
-    rm -rf "$HOME/Library/Saved Application State/$app_id.savedState"
-
-    # Remove the entire Zed directory if no installations remain
-    if check_remaining_installations; then
-        rm -rf "$HOME/Library/Application Support/Zed"
-        rm -rf "$HOME/Library/Logs/Zed"
-
-        prompt_remove_preferences
-    fi
-
-    rm -rf $HOME/.zed_server
-}
-
-main "$@"
+echo "Zed Custom has been uninstalled."

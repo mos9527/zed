@@ -1289,7 +1289,7 @@ fn register_actions(
                         Toast::new(
                             NotificationId::unique::<RegisterZedScheme>(),
                             format!(
-                                "zed:// links will now open in {}.",
+                                "zedc:// links will now open in {}.",
                                 ReleaseChannel::global(cx).display_name()
                             ),
                         ),
@@ -1299,7 +1299,7 @@ fn register_actions(
                 Ok(())
             })
             .detach_and_prompt_err(
-                "Error registering zed:// scheme",
+                "Error registering zedc:// scheme",
                 window,
                 cx,
                 |_, _, _| None,
@@ -1728,7 +1728,7 @@ fn open_about_window(cx: &mut App) {
     cx.open_window(
         WindowOptions {
             titlebar: Some(TitlebarOptions {
-                title: Some("About Zed".into()),
+                title: Some("About Zed Custom".into()),
                 appears_transparent: true,
                 traffic_light_position: Some(point(px(12.), px(12.))),
             }),
@@ -2093,7 +2093,7 @@ fn init_reduce_motion(cx: &mut App) {
     cx.observe_global::<SettingsStore>(apply).detach();
 }
 
-/// Starts watching `~/.config/zed/AGENTS.md` (or the platform equivalent) and
+/// Starts watching `~/.config/zedc/AGENTS.md` (or the platform equivalent) and
 /// surfaces any read errors using the same notification UI as settings errors.
 ///
 /// The file itself is loaded into [`agent_settings::UserAgentsMd`] for inclusion

@@ -44,7 +44,7 @@ struct ExplorerCommandInjector;
 impl IExplorerCommand_Impl for ExplorerCommandInjector_Impl {
     fn GetTitle(&self, _: Ref<IShellItemArray>) -> Result<windows_core::PWSTR> {
         let command_description =
-            retrieve_command_description().unwrap_or(HSTRING::from("Open with Zed"));
+            retrieve_command_description().unwrap_or(HSTRING::from("Open with Zed Custom"));
         unsafe { SHStrDupW(&command_description) }
     }
 
@@ -128,9 +128,9 @@ impl IClassFactory_Impl for ExplorerCommandInjectorFactory_Impl {
 }
 
 const MODULE_ID: GUID = cfg_select! {
-    feature = "stable" => { GUID::from_u128(0x6a1f6b13_3b82_48a1_9e06_7bb0a6d0bffd) },
-    feature = "preview" => { GUID::from_u128(0xaf8e85ea_fb20_4db2_93cf_56513c1ec697) },
-    feature = "nightly" => { GUID::from_u128(0x266f2cfe_1653_42af_b55c_fe3590c83871) },
+    feature = "stable" => { GUID::from_u128(0x92453e0b_7f66_489a_98cf_95019875f45e) },
+    feature = "preview" => { GUID::from_u128(0x651d3cde_f51b_4a0f_8aad_d91fb469d487) },
+    feature = "nightly" => { GUID::from_u128(0xfb7ebf2f_44a7_45ab_95a2_855d4204985d) },
     _ => { GUID::from_u128(0x685f4d49_6718_4c55_b271_ebb5c6a48d6f) },
 };
 
@@ -174,16 +174,16 @@ fn get_zed_install_folder() -> Option<PathBuf> {
 
 #[inline]
 fn get_zed_exe_path() -> Option<String> {
-    get_zed_install_folder().map(|path| path.join("Zed.exe").to_string_lossy().into_owned())
+    get_zed_install_folder().map(|path| path.join("zedc.exe").to_string_lossy().into_owned())
 }
 
 #[inline]
 fn retrieve_command_description() -> Result<HSTRING> {
     const REG_PATH: &str = cfg_select! {
-        feature = "stable" => { r#"Software\Classes\ZedContextMenu"# },
-        feature = "preview" => { r#"Software\Classes\ZedPreviewContextMenu"# },
-        feature = "nightly" => { r#"Software\Classes\ZedNightlyContextMenu"# },
-        _ => { r#"Software\Classes\ZedDevContextMenu"# },
+        feature = "stable" => { r#"Software\Classes\ZedCustomContextMenu"# },
+        feature = "preview" => { r#"Software\Classes\ZedCustomPreviewContextMenu"# },
+        feature = "nightly" => { r#"Software\Classes\ZedCustomNightlyContextMenu"# },
+        _ => { r#"Software\Classes\ZedCustomDevContextMenu"# },
     };
 
     let key = windows_registry::CURRENT_USER.open(REG_PATH)?;

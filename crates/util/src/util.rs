@@ -350,8 +350,7 @@ pub fn get_shell_safe_zed_path(shell_kind: shell::ShellKind) -> anyhow::Result<S
         .context("Failed to shell-escape Zed executable path.")
 }
 
-/// Returns a path for the zed cli executable, this function
-/// should be called from the zed executable, not zed-cli.
+/// Resolves the CLI path relative to the running editor executable.
 pub fn get_zed_cli_path() -> Result<PathBuf> {
     use anyhow::Context as _;
     let zed_path =
@@ -361,15 +360,14 @@ pub fn get_zed_cli_path() -> Result<PathBuf> {
         .context("Failed to determine parent directory of zed executable path.")?;
 
     let possible_locations: &[&str] = if cfg!(target_os = "macos") {
-        // On macOS, the zed executable and zed-cli are inside the app bundle,
-        // so here ./cli is for both installed and development builds.
-        &["./cli"]
+        // Both binaries are next to each other in the bundle or Cargo target directory.
+        &["./zedc-cli", "./cli"]
     } else if cfg!(target_os = "windows") {
-        // bin/zed.exe is for installed builds, ./cli.exe is for development builds.
-        &["bin/zed.exe", "./cli.exe"]
+        // bin/zedc.exe is for installed builds, ./cli.exe is for development builds.
+        &["bin/zedc.exe", "./cli.exe"]
     } else if cfg!(target_os = "linux") || cfg!(target_os = "freebsd") {
         // bin is the standard, ./cli is for the target directory in development builds.
-        &["../bin/zed", "./cli"]
+        &["../bin/zedc", "./cli"]
     } else {
         anyhow::bail!("unsupported platform for determining zed-cli path");
     };

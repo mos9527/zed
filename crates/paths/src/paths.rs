@@ -15,7 +15,7 @@ pub const EDITORCONFIG_NAME: &str = ".editorconfig";
 /// and state directory paths.
 ///
 /// Forks should change this to avoid colliding with Zed's user data.
-pub const APP_NAME: &str = "Zed";
+pub const APP_NAME: &str = "ZedC";
 
 /// Lowercased form of [`APP_NAME`], for use in XDG-style paths on
 /// Linux/FreeBSD and the macOS `~/.config` fallback.
@@ -53,30 +53,30 @@ static CUSTOM_DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// The resolved data directory, combining custom override or platform defaults.
 /// This is set once and cached for subsequent calls.
-/// On macOS, this is `~/Library/Application Support/Zed`.
-/// On Linux/FreeBSD, this is `$XDG_DATA_HOME/zed`.
-/// On Windows, this is `%LOCALAPPDATA%\Zed`.
+/// On macOS, this is `~/Library/Application Support/ZedC`.
+/// On Linux/FreeBSD, this is `$XDG_DATA_HOME/zedc`.
+/// On Windows, this is `%LOCALAPPDATA%\ZedC`.
 static CURRENT_DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// The resolved config directory, combining custom override or platform defaults.
 /// This is set once and cached for subsequent calls.
-/// On macOS, this is `~/.config/zed`.
-/// On Linux/FreeBSD, this is `$XDG_CONFIG_HOME/zed`.
-/// On Windows, this is `%APPDATA%\Zed`.
+/// On macOS, this is `~/.config/zedc`.
+/// On Linux/FreeBSD, this is `$XDG_CONFIG_HOME/zedc`.
+/// On Windows, this is `%APPDATA%\ZedC`.
 static CONFIG_DIR: OnceLock<PathBuf> = OnceLock::new();
 
-/// Returns the relative path to the zed_server directory on the ssh host.
+/// Returns the relative path to the .zedc_server directory on the ssh host.
 pub fn remote_server_dir_relative() -> &'static RelPath {
     static CACHED: LazyLock<&'static RelPath> =
-        LazyLock::new(|| RelPath::from_unix_str(".zed_server").unwrap());
+        LazyLock::new(|| RelPath::from_unix_str(".zedc_server").unwrap());
     *CACHED
 }
 
 // Remove this once 223 goes stable
-/// Returns the relative path to the zed_wsl_server directory on the wsl host.
+/// Returns the relative path to the .zedc_wsl_server directory on the wsl host.
 pub fn remote_wsl_server_dir_relative() -> &'static RelPath {
     static CACHED: LazyLock<&'static RelPath> =
-        LazyLock::new(|| RelPath::from_unix_str(".zed_wsl_server").unwrap());
+        LazyLock::new(|| RelPath::from_unix_str(".zedc_wsl_server").unwrap());
     *CACHED
 }
 
@@ -242,13 +242,13 @@ pub fn remote_server_state_dir() -> &'static PathBuf {
     REMOTE_SERVER_STATE.get_or_init(|| data_dir().join("server_state"))
 }
 
-/// Returns the path to the `Zed.log` file.
+/// Returns the path to the `ZedC.log` file.
 pub fn log_file() -> &'static PathBuf {
     static LOG_FILE: OnceLock<PathBuf> = OnceLock::new();
     LOG_FILE.get_or_init(|| logs_dir().join(format!("{}.log", APP_NAME)))
 }
 
-/// Returns the path to the `Zed.log.old` file.
+/// Returns the path to the `ZedC.log.old` file.
 pub fn old_log_file() -> &'static PathBuf {
     static OLD_LOG_FILE: OnceLock<PathBuf> = OnceLock::new();
     OLD_LOG_FILE.get_or_init(|| logs_dir().join(format!("{}.log.old", APP_NAME)))

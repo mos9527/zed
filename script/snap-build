@@ -5,8 +5,8 @@ set -euxo pipefail
 help_info() {
   echo "
 Usage: ${0##*/} [options]
-Build zed.snap from the tarball produced by script/bundle-linux
-(target/release/zed-linux-<arch>.tar.gz), for the channel in
+Build zedc.snap from the tarball produced by script/bundle-linux
+(target/release/zedc-linux-<arch>.tar.gz), for the channel in
 crates/zed/RELEASE_CHANNEL.
 
 Options:
@@ -40,7 +40,7 @@ version="$(script/get-crate-version zed)"
 
 arch="$(uname -m)"
 export ARCH_TRIPLET="$arch-linux-gnu"
-export ZED_TARBALL="target/release/zed-linux-$arch.tar.gz"
+export ZED_TARBALL="target/release/zedc-linux-$arch.tar.gz"
 if [[ ! -f "$ZED_TARBALL" ]]; then
   echo "Missing $ZED_TARBALL, run script/bundle-linux first"
   exit 1
@@ -50,17 +50,17 @@ export SNAP_GRADE="stable"
 store_channel=""
 case "$channel" in
   stable)
-    export APP_ID="dev.zed.Zed"
+    export APP_ID="io.github.mos9527.ZedCustom"
     export RELEASE_VERSION="$version"
     store_channel="latest/stable"
     ;;
   preview)
-    export APP_ID="dev.zed.Zed-Preview"
+    export APP_ID="io.github.mos9527.ZedCustom-Preview"
     export RELEASE_VERSION="$version-pre"
     store_channel="latest/beta"
     ;;
   nightly)
-    export APP_ID="dev.zed.Zed-Nightly"
+    export APP_ID="io.github.mos9527.ZedCustom-Nightly"
     # Snap versions are limited to 32 characters, so this uses a short sha
     # rather than the full one in the version script/upload-nightly publishes.
     export RELEASE_VERSION="$version+nightly.$(git rev-parse --short=7 HEAD)"
@@ -69,7 +69,7 @@ case "$channel" in
     store_channel="latest/edge"
     ;;
   dev)
-    export APP_ID="dev.zed.Zed-Dev"
+    export APP_ID="io.github.mos9527.ZedCustom-Dev"
     export RELEASE_VERSION="$version+dev.$(git rev-parse --short=7 HEAD)"
     export SNAP_GRADE="devel"
     ;;
@@ -96,8 +96,8 @@ envsubst '$RELEASE_VERSION $SNAP_GRADE $ZED_TARBALL $APP_ID $ARCH_TRIPLET' < cra
 # still remain on rebuild.
 snapcraft clean
 
-snapcraft pack --output zed.snap
+snapcraft pack --output zedc.snap
 
 if [[ "$publish" == "true" ]]; then
-  snapcraft upload --release="$store_channel" zed.snap
+  snapcraft upload --release="$store_channel" zedc.snap
 fi

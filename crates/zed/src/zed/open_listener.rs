@@ -155,9 +155,14 @@ impl OpenRequest {
         }
 
         for url in request.urls {
-            if let Some(server_name) = url.strip_prefix("zed-cli://") {
+            // Built-in settings, schemas, and links can still use the upstream scheme.
+            let url = match url.strip_prefix("zedc://") {
+                Some(path) => format!("zed://{path}"),
+                None => url,
+            };
+            if let Some(server_name) = url.strip_prefix("zedc-cli://") {
                 this.kind = Some(OpenRequestKind::CliConnection(connect_to_cli(server_name)?));
-            } else if let Some(action_index) = url.strip_prefix("zed-dock-action://") {
+            } else if let Some(action_index) = url.strip_prefix("zedc-dock-action://") {
                 this.kind = Some(OpenRequestKind::DockMenuAction {
                     index: action_index.parse()?,
                 });
@@ -172,7 +177,7 @@ impl OpenRequest {
                 this.kind = Some(OpenRequestKind::Extension {
                     extension_id: extension_id.to_string(),
                 });
-            } else if url.starts_with(agent_skills::SKILL_SHARE_LINK_PREFIX) {
+            } else if url.starts_with("zed://skill") {
                 this.parse_skill_install_url(&url)?
             } else if let Some(agent_path) = url.strip_prefix("zed://agent") {
                 this.parse_agent_url(agent_path)
@@ -418,7 +423,7 @@ pub fn listen_for_cli_connections(opener: OpenListener) -> Result<()> {
     use release_channel::RELEASE_CHANNEL_NAME;
     use std::os::unix::net::UnixDatagram;
 
-    let sock_path = paths::data_dir().join(format!("zed-{}.sock", *RELEASE_CHANNEL_NAME));
+    let sock_path = paths::data_dir().join(format!("zedc-{}.sock", *RELEASE_CHANNEL_NAME));
     // remove the socket if the process listening on it has died
     if let Err(e) = UnixDatagram::unbound()?.connect(&sock_path)
         && e.kind() == std::io::ErrorKind::ConnectionRefused
@@ -1746,7 +1751,14 @@ mod tests {
     fn test_parse_focus_app_url(cx: &mut TestAppContext) {
         let _app_state = init_test(cx);
 
-        for url in ["zed://", "zed://open", "zed://open/"] {
+        for url in [
+            "zedc://",
+            "zedc://open",
+            "zedc://open/",
+            "zed://",
+            "zed://open",
+            "zed://open/",
+        ] {
             let request = cx.update(|cx| {
                 OpenRequest::parse(
                     RawOpenRequest {

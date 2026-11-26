@@ -1,14 +1,15 @@
-use client::ZED_URL_SCHEME;
+use client::ZED_CUSTOM_URL_SCHEME;
 use gpui::{AsyncApp, actions};
 
 actions!(
     cli,
     [
-        /// Registers the zed:// URL scheme handler.
+        /// Registers the zedc:// URL scheme handler.
         RegisterZedScheme
     ]
 );
 
 pub async fn register_zed_scheme(cx: &AsyncApp) -> anyhow::Result<()> {
-    cx.update(|cx| cx.register_url_scheme(ZED_URL_SCHEME)).await
+    cx.update(|cx| cx.register_url_scheme(ZED_CUSTOM_URL_SCHEME))
+        .await
 }

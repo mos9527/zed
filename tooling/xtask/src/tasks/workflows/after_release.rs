@@ -164,9 +164,9 @@ fn publish_winget() -> NamedJob {
 
     fn set_package_name() -> (Step<Run>, StepOutput) {
         let script = r#"if ($env:IS_PRERELEASE -eq "true") {
-    $PACKAGE_NAME = "ZedIndustries.Zed.Preview"
+    $PACKAGE_NAME = "Mos9527.ZedCustom.Preview"
 } else {
-    $PACKAGE_NAME = "ZedIndustries.Zed"
+    $PACKAGE_NAME = "Mos9527.ZedCustom"
 }
 
 echo "PACKAGE_NAME=$PACKAGE_NAME" >> $env:GITHUB_OUTPUT
@@ -203,7 +203,7 @@ echo "PACKAGE_NAME=$PACKAGE_NAME" >> $env:GITHUB_OUTPUT
 fn publish_snap(arch: Arch) -> NamedJob {
     fn download_release_tarball(arch: Arch) -> Step<Run> {
         named::bash(format!(
-            r#"gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zed-linux-{arch}.tar.gz" --dir=target/release"#
+            r#"gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zedc-linux-{arch}.tar.gz" --dir=target/release"#
         ))
         .add_env(("GITHUB_TOKEN", vars::GITHUB_TOKEN))
     }

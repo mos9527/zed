@@ -91,7 +91,7 @@ let
       stdenv' = stdenv;
     in
     rec {
-      pname = "zed-editor";
+      pname = "zedc-editor";
       version =
         zedCargoLock.package.version
         + "-nightly"
@@ -371,12 +371,12 @@ craneLib.buildPackage (
           mkdir -p $out/Applications $out/bin
           # Zed expects git next to its own binary
           ln -s ${git}/bin/git "$app_path/Contents/MacOS/git"
-          mv $TARGET_DIR/cli "$app_path/Contents/MacOS/cli"
+          mv $TARGET_DIR/cli "$app_path/Contents/MacOS/zedc-cli"
           mv "$app_path" $out/Applications/
 
           # Physical location of the CLI must be inside the app bundle as this is used
           # to determine which app to start
-          ln -s "$out/Applications/Zed Nightly.app/Contents/MacOS/cli" $out/bin/zed
+          ln -s "$out/Applications/Zed Custom Nightly.app/Contents/MacOS/zedc-cli" $out/bin/zedc
 
           runHook postInstall
         ''
@@ -385,26 +385,25 @@ craneLib.buildPackage (
           runHook preInstall
 
           mkdir -p $out/bin $out/libexec
-          cp $TARGET_DIR/zed $out/libexec/zed-editor
-          cp $TARGET_DIR/cli  $out/bin/zed
-          ln -s $out/bin/zed $out/bin/zeditor  # home-manager expects the CLI binary to be here
+          cp $TARGET_DIR/zedc $out/libexec/zedc-editor
+          cp $TARGET_DIR/cli  $out/bin/zedc
 
 
           install -D "crates/zed/resources/app-icon-nightly@2x.png" \
-            "$out/share/icons/hicolor/1024x1024@2x/apps/zed.png"
+            "$out/share/icons/hicolor/1024x1024@2x/apps/zedc.png"
           install -D crates/zed/resources/app-icon-nightly.png \
-            $out/share/icons/hicolor/512x512/apps/zed.png
+            $out/share/icons/hicolor/512x512/apps/zedc.png
 
           # TODO: icons should probably be named "zed-nightly"
           (
             export DO_STARTUP_NOTIFY="true"
-            export APP_CLI="zed"
-            export APP_ICON="zed"
-            export APP_NAME="Zed Nightly"
+            export APP_CLI="zedc"
+            export APP_ICON="zedc"
+            export APP_NAME="Zed Custom Nightly"
             export APP_ARGS="%U"
             mkdir -p "$out/share/applications"
-            ${lib.getExe envsubst} < "crates/zed/resources/zed.desktop.in" > "$out/share/applications/dev.zed.Zed-Nightly.desktop"
-            chmod +x "$out/share/applications/dev.zed.Zed-Nightly.desktop"
+            ${lib.getExe envsubst} < "crates/zed/resources/zed.desktop.in" > "$out/share/applications/io.github.mos9527.ZedCustom-Nightly.desktop"
+            chmod +x "$out/share/applications/io.github.mos9527.ZedCustom-Nightly.desktop"
           )
 
           runHook postInstall
@@ -412,7 +411,7 @@ craneLib.buildPackage (
 
     # TODO: why isn't this also done on macOS?
     postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
-      wrapProgram $out/libexec/zed-editor --suffix PATH : ${lib.makeBinPath [ nodejs_22 ]}
+      wrapProgram $out/libexec/zedc-editor --suffix PATH : ${lib.makeBinPath [ nodejs_22 ]}
     '';
 
     meta = {
@@ -420,7 +419,7 @@ craneLib.buildPackage (
       homepage = "https://zed.dev";
       changelog = "https://zed.dev/releases/preview";
       license = lib.licenses.gpl3Only;
-      mainProgram = "zed";
+      mainProgram = "zedc";
       platforms = lib.platforms.linux ++ lib.platforms.darwin;
     };
   }

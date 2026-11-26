@@ -111,7 +111,8 @@ fn split_paths_and_urls(paths_or_urls: &[String]) -> (Vec<String>, Vec<String>) 
     let mut paths = vec![];
     let mut urls = vec![];
     for path in paths_or_urls {
-        if path.starts_with("zed://")
+        if path.starts_with("zedc://")
+            || path.starts_with("zed://")
             || path.starts_with("http://")
             || path.starts_with("https://")
             || path.starts_with("file://")
@@ -131,13 +132,13 @@ fn split_paths_and_urls(paths_or_urls: &[String]) -> (Vec<String>, Vec<String>) 
 // This part of code is mostly from crates/cli/src/main.rs
 fn send_args_to_instance(args: &Args) -> anyhow::Result<()> {
     if let Some(dock_menu_action_idx) = args.dock_action {
-        let url = format!("zed-dock-action://{}", dock_menu_action_idx);
+        let url = format!("zedc-dock-action://{}", dock_menu_action_idx);
         return write_message_to_instance_pipe(url.as_bytes());
     }
 
     let (server, server_name) =
         IpcOneShotServer::<IpcHandshake>::new().context("Handshake before Zed spawn")?;
-    let url = format!("zed-cli://{server_name}");
+    let url = format!("zedc-cli://{server_name}");
 
     let request = {
         let (paths, urls) = split_paths_and_urls(&args.paths_or_urls);

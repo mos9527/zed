@@ -105,9 +105,9 @@ jobs:
       name: after_release::publish_winget::set_package_name
       run: |
         if ($env:IS_PRERELEASE -eq "true") {
-            $PACKAGE_NAME = "ZedIndustries.Zed.Preview"
+            $PACKAGE_NAME = "Mos9527.ZedCustom.Preview"
         } else {
-            $PACKAGE_NAME = "ZedIndustries.Zed"
+            $PACKAGE_NAME = "Mos9527.ZedCustom"
         }
 
         echo "PACKAGE_NAME=$PACKAGE_NAME" >> $env:GITHUB_OUTPUT
@@ -129,7 +129,7 @@ jobs:
         clean: false
         ref: ${{ env.TAG_NAME }}
     - name: after_release::publish_snap::download_release_tarball
-      run: gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zed-linux-x86_64.tar.gz" --dir=target/release
+      run: gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zedc-linux-x86_64.tar.gz" --dir=target/release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: release::publish_snap::setup_snapcraft
@@ -151,7 +151,7 @@ jobs:
         clean: false
         ref: ${{ env.TAG_NAME }}
     - name: after_release::publish_snap::download_release_tarball
-      run: gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zed-linux-aarch64.tar.gz" --dir=target/release
+      run: gh release download "$TAG_NAME" --repo="$GITHUB_REPOSITORY" --pattern="zedc-linux-aarch64.tar.gz" --dir=target/release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: release::publish_snap::setup_snapcraft

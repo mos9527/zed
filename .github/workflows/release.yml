@@ -410,8 +410,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: zed-linux-aarch64.tar.gz
-        path: target/release/zed-linux-aarch64.tar.gz
+        name: zedc-linux-aarch64.tar.gz
+        path: target/release/zedc-linux-aarch64.tar.gz
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -456,8 +456,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: zed-linux-x86_64.tar.gz
-        path: target/release/zed-linux-x86_64.tar.gz
+        name: zedc-linux-x86_64.tar.gz
+        path: target/release/zedc-linux-x86_64.tar.gz
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -548,6 +548,7 @@ jobs:
       ZED_MINIDUMP_ENDPOINT: ${{ secrets.ZED_SENTRY_MINIDUMP_ENDPOINT }}
       MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
       MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_SIGNING_IDENTITY: ${{ vars.MACOS_SIGNING_IDENTITY }}
       APPLE_NOTARIZATION_KEY: ${{ secrets.APPLE_NOTARIZATION_KEY }}
       APPLE_NOTARIZATION_KEY_ID: ${{ secrets.APPLE_NOTARIZATION_KEY_ID }}
       APPLE_NOTARIZATION_ISSUER_ID: ${{ secrets.APPLE_NOTARIZATION_ISSUER_ID }}
@@ -589,8 +590,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: Zed-aarch64.dmg
-        path: target/aarch64-apple-darwin/release/Zed-aarch64.dmg
+        name: ZedCustom-aarch64.dmg
+        path: target/aarch64-apple-darwin/release/ZedCustom-aarch64.dmg
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -611,6 +612,7 @@ jobs:
       ZED_MINIDUMP_ENDPOINT: ${{ secrets.ZED_SENTRY_MINIDUMP_ENDPOINT }}
       MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
       MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_SIGNING_IDENTITY: ${{ vars.MACOS_SIGNING_IDENTITY }}
       APPLE_NOTARIZATION_KEY: ${{ secrets.APPLE_NOTARIZATION_KEY }}
       APPLE_NOTARIZATION_KEY_ID: ${{ secrets.APPLE_NOTARIZATION_KEY_ID }}
       APPLE_NOTARIZATION_ISSUER_ID: ${{ secrets.APPLE_NOTARIZATION_ISSUER_ID }}
@@ -652,8 +654,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: Zed-x86_64.dmg
-        path: target/x86_64-apple-darwin/release/Zed-x86_64.dmg
+        name: ZedCustom-x86_64.dmg
+        path: target/x86_64-apple-darwin/release/ZedCustom-x86_64.dmg
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -673,6 +675,7 @@ jobs:
       ZED_CLIENT_CHECKSUM_SEED: ${{ secrets.ZED_CLIENT_CHECKSUM_SEED }}
       ZED_MINIDUMP_ENDPOINT: ${{ secrets.ZED_SENTRY_MINIDUMP_ENDPOINT }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_SIGNING_TENANT_ID }}
+      ZED_CUSTOM_APPX_PUBLISHER: ${{ vars.ZED_CUSTOM_APPX_PUBLISHER }}
       AZURE_CLIENT_ID: ${{ secrets.AZURE_SIGNING_CLIENT_ID }}
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_SIGNING_CLIENT_SECRET }}
       ACCOUNT_NAME: ${{ vars.AZURE_SIGNING_ACCOUNT_NAME }}
@@ -700,8 +703,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: Zed-aarch64.exe
-        path: target/Zed-aarch64.exe
+        name: ZedCustom-aarch64.exe
+        path: target/ZedCustom-aarch64.exe
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -721,6 +724,7 @@ jobs:
       ZED_CLIENT_CHECKSUM_SEED: ${{ secrets.ZED_CLIENT_CHECKSUM_SEED }}
       ZED_MINIDUMP_ENDPOINT: ${{ secrets.ZED_SENTRY_MINIDUMP_ENDPOINT }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_SIGNING_TENANT_ID }}
+      ZED_CUSTOM_APPX_PUBLISHER: ${{ vars.ZED_CUSTOM_APPX_PUBLISHER }}
       AZURE_CLIENT_ID: ${{ secrets.AZURE_SIGNING_CLIENT_ID }}
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_SIGNING_CLIENT_SECRET }}
       ACCOUNT_NAME: ${{ vars.AZURE_SIGNING_ACCOUNT_NAME }}
@@ -748,8 +752,8 @@ jobs:
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       with:
-        name: Zed-x86_64.exe
-        path: target/Zed-x86_64.exe
+        name: ZedCustom-x86_64.exe
+        path: target/ZedCustom-x86_64.exe
         if-no-files-found: error
     - name: run_bundling::upload_artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -783,22 +787,22 @@ jobs:
       run: |-
         mkdir -p release-artifacts/
 
-        mv ./artifacts/Zed-aarch64.dmg/Zed-aarch64.dmg release-artifacts/Zed-aarch64.dmg
-        mv ./artifacts/Zed-x86_64.dmg/Zed-x86_64.dmg release-artifacts/Zed-x86_64.dmg
-        mv ./artifacts/zed-linux-aarch64.tar.gz/zed-linux-aarch64.tar.gz release-artifacts/zed-linux-aarch64.tar.gz
-        mv ./artifacts/zed-linux-x86_64.tar.gz/zed-linux-x86_64.tar.gz release-artifacts/zed-linux-x86_64.tar.gz
+        mv ./artifacts/ZedCustom-aarch64.dmg/ZedCustom-aarch64.dmg release-artifacts/ZedCustom-aarch64.dmg
+        mv ./artifacts/ZedCustom-x86_64.dmg/ZedCustom-x86_64.dmg release-artifacts/ZedCustom-x86_64.dmg
+        mv ./artifacts/zedc-linux-aarch64.tar.gz/zedc-linux-aarch64.tar.gz release-artifacts/zedc-linux-aarch64.tar.gz
+        mv ./artifacts/zedc-linux-x86_64.tar.gz/zedc-linux-x86_64.tar.gz release-artifacts/zedc-linux-x86_64.tar.gz
         mv ./artifacts/bwrap-linux-aarch64.gz/bwrap-linux-aarch64.gz release-artifacts/bwrap-linux-aarch64.gz
         mv ./artifacts/bwrap-linux-x86_64.gz/bwrap-linux-x86_64.gz release-artifacts/bwrap-linux-x86_64.gz
-        mv ./artifacts/Zed-x86_64.exe/Zed-x86_64.exe release-artifacts/Zed-x86_64.exe
-        mv ./artifacts/Zed-aarch64.exe/Zed-aarch64.exe release-artifacts/Zed-aarch64.exe
+        mv ./artifacts/ZedCustom-x86_64.exe/ZedCustom-x86_64.exe release-artifacts/ZedCustom-x86_64.exe
+        mv ./artifacts/ZedCustom-aarch64.exe/ZedCustom-aarch64.exe release-artifacts/ZedCustom-aarch64.exe
         mv ./artifacts/zed-remote-server-macos-aarch64.gz/zed-remote-server-macos-aarch64.gz release-artifacts/zed-remote-server-macos-aarch64.gz
         mv ./artifacts/zed-remote-server-macos-x86_64.gz/zed-remote-server-macos-x86_64.gz release-artifacts/zed-remote-server-macos-x86_64.gz
         mv ./artifacts/zed-remote-server-linux-aarch64.gz/zed-remote-server-linux-aarch64.gz release-artifacts/zed-remote-server-linux-aarch64.gz
         mv ./artifacts/zed-remote-server-linux-x86_64.gz/zed-remote-server-linux-x86_64.gz release-artifacts/zed-remote-server-linux-x86_64.gz
         mv ./artifacts/zed-remote-server-windows-aarch64.zip/zed-remote-server-windows-aarch64.zip release-artifacts/zed-remote-server-windows-aarch64.zip
         mv ./artifacts/zed-remote-server-windows-x86_64.zip/zed-remote-server-windows-x86_64.zip release-artifacts/zed-remote-server-windows-x86_64.zip
-    - name: gh release upload "$GITHUB_REF_NAME" --repo=zed-industries/zed release-artifacts/*
-      run: gh release upload "$GITHUB_REF_NAME" --repo=zed-industries/zed release-artifacts/*
+    - name: gh release upload "$GITHUB_REF_NAME" --repo="$GITHUB_REPOSITORY" release-artifacts/*
+      run: gh release upload "$GITHUB_REF_NAME" --repo="$GITHUB_REPOSITORY" release-artifacts/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   validate_release_assets:
@@ -810,10 +814,10 @@ jobs:
     steps:
     - name: release::validate_release_assets
       run: |
-        EXPECTED_ASSETS='["Zed-aarch64.dmg", "Zed-x86_64.dmg", "zed-linux-aarch64.tar.gz", "zed-linux-x86_64.tar.gz", "bwrap-linux-aarch64.gz", "bwrap-linux-x86_64.gz", "Zed-x86_64.exe", "Zed-aarch64.exe", "zed-remote-server-macos-aarch64.gz", "zed-remote-server-macos-x86_64.gz", "zed-remote-server-linux-aarch64.gz", "zed-remote-server-linux-x86_64.gz", "zed-remote-server-windows-aarch64.zip", "zed-remote-server-windows-x86_64.zip"]'
+        EXPECTED_ASSETS='["ZedCustom-aarch64.dmg", "ZedCustom-x86_64.dmg", "zedc-linux-aarch64.tar.gz", "zedc-linux-x86_64.tar.gz", "bwrap-linux-aarch64.gz", "bwrap-linux-x86_64.gz", "ZedCustom-x86_64.exe", "ZedCustom-aarch64.exe", "zed-remote-server-macos-aarch64.gz", "zed-remote-server-macos-x86_64.gz", "zed-remote-server-linux-aarch64.gz", "zed-remote-server-linux-x86_64.gz", "zed-remote-server-windows-aarch64.zip", "zed-remote-server-windows-x86_64.zip"]'
         TAG="$GITHUB_REF_NAME"
 
-        ACTUAL_ASSETS=$(gh release view "$TAG" --repo=zed-industries/zed --json assets -q '[.assets[].name]')
+        ACTUAL_ASSETS=$(gh release view "$TAG" --repo="$GITHUB_REPOSITORY" --json assets -q '[.assets[].name]')
 
         MISSING_ASSETS=$(echo "$EXPECTED_ASSETS" | jq -r --argjson actual "$ACTUAL_ASSETS" '. - $actual | .[]')
 
@@ -929,7 +933,7 @@ jobs:
         fi
 
         if [[ "$should_release" == "true" ]]; then
-            gh release edit "$tag" --repo=zed-industries/zed --draft=false
+            gh release edit "$tag" --repo="$GITHUB_REPOSITORY" --draft=false
             release_published=true
         fi
 
@@ -969,7 +973,7 @@ jobs:
         MESSAGE=$(if [ "$DRAFT_RESULT" == "failure" ]; then
             echo "❌ Draft release creation failed for $TAG: $RUN_URL"
         else
-            RELEASE_URL=$(gh release view "$TAG" --repo=zed-industries/zed --json url -q '.url')
+            RELEASE_URL=$(gh release view "$TAG" --repo="$GITHUB_REPOSITORY" --json url -q '.url')
             if [ "$UPLOAD_RESULT" == "failure" ]; then
                 echo "❌ Release asset upload failed for $TAG: $RELEASE_URL"
             elif [ "$UPLOAD_RESULT" == "cancelled" ] || [ "$UPLOAD_RESULT" == "skipped" ]; then

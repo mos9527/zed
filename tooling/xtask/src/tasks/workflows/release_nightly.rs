@@ -48,7 +48,7 @@ pub fn release_nightly() -> Workflow {
     let update_nightly_tag = update_nightly_tag_job(&bundle);
     fn download_nightly_tarball(arch: Arch) -> steps::DownloadArtifactStep {
         steps::download_artifact()
-            .artifact_name(format!("zed-linux-{arch}.tar.gz"))
+            .artifact_name(format!("zedc-linux-{arch}.tar.gz"))
             .path("target/release")
     }
 
