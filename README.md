@@ -15,10 +15,13 @@ You can download a build for your platform from [Zed Custom releases](https://gi
 
 ## Additional Features
 - LaTeX Math support in **Markdown, Agent Thread, and Jupyter Notebooks**
+- Faster Windows initial project scanning speed
+- [IBM Plex Serif](https://www.ibm.com/plex/) as the default UI font
 
 ## Credits
 - [zed-industries/zed](https://github.com/zed-industries/zed)
 - [zed-industries/zed - Add LaTeX rendering to Markdown preview (#54668)](https://github.com/zed-industries/zed/pull/54668)
+- [zed-industries/zed - fs: Batch worktree metadata lookups on Windows (#67496)](https://github.com/zed-industries/zed/pull/67496)
 
 ## Licensing
 Per Zed, GPL-3.0 with Apache-2.0 components where marked.
