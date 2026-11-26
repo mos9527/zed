@@ -21,6 +21,7 @@ fn main() {
         let fs = RealFs::new(None, cx.background_executor().clone());
 
         cx.spawn(async move |cx| {
+            let start = std::time::Instant::now();
             let worktree = Worktree::local(
                 Path::new(&worktree_root_path),
                 true,
@@ -34,7 +35,6 @@ fn main() {
             .expect("Worktree initialization to succeed");
             let did_finish_scan =
                 worktree.update(cx, |this, _| this.as_local().unwrap().scan_complete());
-            let start = std::time::Instant::now();
             did_finish_scan.await;
             let elapsed = start.elapsed();
             let (files, directories) =

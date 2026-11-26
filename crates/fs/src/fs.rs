@@ -171,6 +171,10 @@ pub trait Fs: Send + Sync {
         path: &Path,
     ) -> Result<Pin<Box<dyn Send + Stream<Item = Result<PathBuf>>>>>;
 
+    async fn read_dir_for_scan(&self, path: &Path) -> Result<Vec<ScannedDirEntry>> {
+        read_dir_for_scan(self, path).await
+    }
+
     /// Creates the native file watcher now rather than on the first `watch`, so a
     /// failure to start it (e.g. inotify instance limits) can be reported at startup.
     fn start_native_watcher(&self) -> Result<()> {
@@ -382,6 +386,34 @@ pub struct Metadata {
     pub is_fifo: bool,
     pub is_executable: bool,
     pub is_writable: bool,
+}
+
+pub struct ScannedDirEntry {
+    pub path: PathBuf,
+    pub metadata: Option<EntryMetadata>,
+}
+
+#[derive(Clone, Copy)]
+pub struct EntryMetadata {
+    pub inode: u64,
+    pub mtime: MTime,
+    pub is_dir: bool,
+    pub is_symlink: bool,
+    pub is_fifo: bool,
+    pub len: u64,
+}
+
+impl From<Metadata> for EntryMetadata {
+    fn from(metadata: Metadata) -> Self {
+        Self {
+            inode: metadata.inode,
+            mtime: metadata.mtime,
+            is_dir: metadata.is_dir,
+            is_symlink: metadata.is_symlink,
+            is_fifo: metadata.is_fifo,
+            len: metadata.len,
+        }
+    }
 }
 
 /// Filesystem modification time. The purpose of this newtype is to discourage use of operations
@@ -833,6 +865,134 @@ fn read_dir_entries(path: PathBuf) -> Result<impl Send + Iterator<Item = Result<
             .map(|entry| entry.path())
             .with_context(|| format!("failed to read directory entry in {path:?}"))
     }))
+}
+
+async fn read_dir_for_scan(fs: &(impl Fs + ?Sized), path: &Path) -> Result<Vec<ScannedDirEntry>> {
+    Ok(fs
+        .read_dir(path)
+        .await?
+        .filter_map(|entry| async {
+            match entry {
+                Ok(path) => Some(ScannedDirEntry {
+                    path,
+                    metadata: None,
+                }),
+                Err(error) => {
+                    log::error!("error processing directory entry: {error:#}");
+                    None
+                }
+            }
+        })
+        .collect()
+        .await)
+}
+
+#[cfg(windows)]
+fn read_windows_dir_for_scan(path: &Path) -> Result<Vec<ScannedDirEntry>> {
+    use std::os::windows::{ffi::OsStringExt, fs::OpenOptionsExt, io::AsRawHandle};
+    use windows::Win32::{
+        Foundation::{ERROR_NO_MORE_FILES, HANDLE},
+        Storage::FileSystem::{
+            FILE_ATTRIBUTE_DIRECTORY, FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_BACKUP_SEMANTICS,
+            FILE_ID_BOTH_DIR_INFO, FILE_LIST_DIRECTORY, FileIdBothDirectoryInfo,
+            GetFileInformationByHandleEx,
+        },
+    };
+
+    let directory = std::fs::OpenOptions::new()
+        .access_mode(FILE_LIST_DIRECTORY.0)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS.0)
+        .open(path)?;
+    let handle = HANDLE(directory.as_raw_handle());
+    let mut entries = Vec::new();
+    // Windows aligns each record on an eight-byte boundary.
+    let mut buffer = vec![0u64; 8192];
+    let buffer_size = std::mem::size_of_val(buffer.as_slice());
+    let name_offset = std::mem::offset_of!(FILE_ID_BOTH_DIR_INFO, FileName);
+    let windows_epoch = UNIX_EPOCH - Duration::from_secs(11_644_473_600);
+
+    loop {
+        // The directory handle and aligned output buffer are live for the duration of the call.
+        match unsafe {
+            GetFileInformationByHandleEx(
+                handle,
+                FileIdBothDirectoryInfo,
+                buffer.as_mut_ptr().cast(),
+                buffer_size as u32,
+            )
+        } {
+            Ok(()) => {}
+            Err(error) if error.code() == ERROR_NO_MORE_FILES.to_hresult() => return Ok(entries),
+            Err(error) => return Err(error.into()),
+        }
+
+        let mut offset = 0;
+        loop {
+            let remaining = buffer_size - offset;
+            anyhow::ensure!(
+                remaining >= std::mem::size_of::<FILE_ID_BOTH_DIR_INFO>(),
+                "truncated Windows directory entry"
+            );
+            // The buffer is initialized, the record fits, and the offset is aligned.
+            let record = unsafe {
+                let pointer = buffer.as_ptr().cast::<u8>().add(offset);
+                pointer.cast::<FILE_ID_BOTH_DIR_INFO>().read()
+            };
+            let next_offset = record.NextEntryOffset as usize;
+            let name_size = record.FileNameLength as usize;
+            let record_size = if next_offset == 0 {
+                remaining
+            } else {
+                next_offset
+            };
+            anyhow::ensure!(
+                record_size <= remaining
+                    && (next_offset == 0 || next_offset.is_multiple_of(8))
+                    && name_size.is_multiple_of(2)
+                    && name_size > 0
+                    && name_size <= record_size.saturating_sub(name_offset),
+                "invalid Windows directory entry"
+            );
+            // The filename fits within the record and starts at a UTF-16-aligned offset.
+            let name = unsafe {
+                let pointer = buffer.as_ptr().cast::<u8>().add(offset + name_offset);
+                std::slice::from_raw_parts(pointer.cast::<u16>(), name_size / 2)
+            };
+            if name != [b'.' as u16] && name != [b'.' as u16, b'.' as u16] {
+                // Reparse points need the existing metadata lookup to resolve the target.
+                let metadata = if record.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT.0 == 0
+                    && record.FileId != 0
+                    && record.LastWriteTime >= 0
+                    && record.EndOfFile >= 0
+                {
+                    let ticks = record.LastWriteTime as u64;
+                    let elapsed =
+                        Duration::new(ticks / 10_000_000, (ticks % 10_000_000) as u32 * 100);
+                    windows_epoch
+                        .checked_add(elapsed)
+                        .map(|modified| EntryMetadata {
+                            inode: record.FileId as u64,
+                            mtime: MTime(modified),
+                            is_dir: record.FileAttributes & FILE_ATTRIBUTE_DIRECTORY.0 != 0,
+                            is_symlink: false,
+                            is_fifo: false,
+                            len: record.EndOfFile as u64,
+                        })
+                } else {
+                    None
+                };
+                entries.push(ScannedDirEntry {
+                    path: path.join(OsString::from_wide(name)),
+                    metadata,
+                });
+            }
+
+            if next_offset == 0 {
+                break;
+            }
+            offset += next_offset;
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -1313,6 +1473,22 @@ impl Fs for RealFs {
             .spawn(async move { read_dir_entries(path) })
             .await?;
         Ok(Box::pin(iter(entries)))
+    }
+
+    #[cfg(windows)]
+    async fn read_dir_for_scan(&self, path: &Path) -> Result<Vec<ScannedDirEntry>> {
+        let directory = path.to_owned();
+        match self
+            .executor
+            .spawn(async move { read_windows_dir_for_scan(&directory) })
+            .await
+        {
+            Ok(entries) => Ok(entries),
+            Err(error) => {
+                log::debug!("batched directory scan failed for {path:?}: {error:#}");
+                read_dir_for_scan(self, path).await
+            }
+        }
     }
 
     fn start_native_watcher(&self) -> Result<()> {
@@ -4008,6 +4184,39 @@ async fn file_id(path: impl AsRef<Path>) -> Result<u64> {
         Ok(((info.nFileIndexHigh as u64) << 32) | (info.nFileIndexLow as u64))
     })
     .await
+}
+
+#[cfg(all(test, windows))]
+#[test]
+fn windows_directory_scan_matches_file_metadata() -> Result<()> {
+    let directory = tempfile::tempdir()?;
+    let child_directory = directory.path().join("directory");
+    std::fs::create_dir(&child_directory)?;
+    let first_file = directory.path().join("file-0000-α.txt");
+    let linked_file = directory.path().join("hard-link.txt");
+    for index in 0..800 {
+        std::fs::write(
+            directory.path().join(format!("file-{index:04}-α.txt")),
+            b"abc",
+        )?;
+    }
+    std::fs::hard_link(&first_file, &linked_file)?;
+
+    let entries = read_windows_dir_for_scan(directory.path())?;
+    assert_eq!(entries.len(), 802);
+    for path in [first_file, linked_file, child_directory] {
+        let entry = entries
+            .iter()
+            .find(|entry| entry.path == path)
+            .context("directory entry missing from the Windows scan")?;
+        let actual = entry.metadata.context("missing batched metadata")?;
+        let expected = std::fs::metadata(&path)?;
+        assert_eq!(actual.inode, smol::block_on(file_id(&path))?);
+        assert_eq!(actual.mtime, MTime(expected.modified()?));
+        assert_eq!(actual.is_dir, expected.is_dir());
+        assert_eq!(actual.len, expected.len());
+    }
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]
