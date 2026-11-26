@@ -7464,11 +7464,11 @@ Float values between `0.0` and `0.9`, where:
 
 - Description: The name of the font to use for text in the UI.
 - Setting: `ui_font_family`
-- Default: `.ZedSans`. This currently aliases to [IBM Plex](https://www.ibm.com/plex/).
+- Default: `IBM Plex Serif` (bundled with Zed).
 
 **Options**
 
-The name of any font family installed on the system, `".ZedSans"` to use the Zed-provided default, or `".SystemUIFont"` to use the system's default UI font (on macOS and Windows).
+Use a bundled or system-installed font family by name. Use `".ZedSans"` for the bundled IBM Plex Sans font or `".SystemUIFont"` for the system's default UI font on macOS and Windows.
 
 ## UI Font Features
 
