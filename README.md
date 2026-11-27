@@ -17,6 +17,7 @@ You can download a build for your platform from [Zed Custom releases](https://gi
 - LaTeX Math support in **Markdown, Agent Thread, and Jupyter Notebooks**
 - Faster Windows initial project scanning speed
 - [IBM Plex Serif](https://www.ibm.com/plex/) as the default UI font
+- GitHub release lookups for language servers and other tools use your [GitHub CLI](https://cli.github.com/) login when `gh` is on Zed Custom's `PATH`, helping avoid anonymous API rate limits. Run `gh auth login` to set it up.
 
 ## Credits
 - [zed-industries/zed](https://github.com/zed-industries/zed)

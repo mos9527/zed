@@ -1,11 +1,14 @@
 use anyhow::{Context as _, Result, anyhow, bail};
 use futures::AsyncReadExt;
+use http_client::http::header::{AUTHORIZATION, HeaderValue};
 use http_client::{AsyncBody, HttpClient, HttpRequestExt, Request, Url};
 use serde::{Deserialize, Deserializer};
 use std::{sync::Arc, time::Duration};
+use util::command::{Stdio, new_command};
 
 const GITHUB_API_URL: &str = "https://api.github.com";
 const GITHUB_RELEASE_REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+const GITHUB_CLI_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub struct GitHubLspBinaryVersion {
     pub name: String,
@@ -54,7 +57,7 @@ pub async fn latest_github_release(
 ) -> anyhow::Result<GithubRelease> {
     let url = format!("{GITHUB_API_URL}/repos/{repo_name_with_owner}/releases");
 
-    let request = github_api_request(&url)?;
+    let request = github_api_request(&url, github_token().await.as_deref())?;
 
     let mut response = http
         .send(request)
@@ -103,7 +106,7 @@ pub async fn get_release_by_tag_name(
 ) -> anyhow::Result<GithubRelease> {
     let url = format!("{GITHUB_API_URL}/repos/{repo_name_with_owner}/releases/tags/{tag}");
 
-    let request = github_api_request(&url)?;
+    let request = github_api_request(&url, github_token().await.as_deref())?;
 
     let mut response = http
         .send(request)
@@ -138,15 +141,47 @@ pub async fn get_release_by_tag_name(
     Ok(release)
 }
 
-fn github_api_request(url: &str) -> Result<Request<AsyncBody>> {
-    Request::get(url)
+async fn github_token() -> Option<String> {
+    github_cli_token()
+        .await
+        .or_else(|| std::env::var("GITHUB_TOKEN").ok())
+}
+
+async fn github_cli_token() -> Option<String> {
+    let executable = which::which_global("gh").ok()?;
+    let mut command = new_command(executable);
+    command
+        .args(["auth", "token", "--hostname", "github.com"])
+        .env("GH_PROMPT_DISABLED", "1")
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(true);
+
+    let output = smol::future::race(async { command.output().await.ok() }, async {
+        smol::Timer::after(GITHUB_CLI_TIMEOUT).await;
+        None
+    })
+    .await?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8(output.stdout).ok()?;
+    let token = stdout.trim();
+    (!token.is_empty() && token.bytes().all(|byte| byte.is_ascii_graphic()))
+        .then(|| token.to_owned())
+}
+
+fn github_api_request(url: &str, token: Option<&str>) -> Result<Request<AsyncBody>> {
+    let mut request = Request::get(url)
         .follow_redirects(http_client::RedirectPolicy::FollowAll)
-        .timeout(GITHUB_RELEASE_REQUEST_TIMEOUT)
-        .when_some(std::env::var("GITHUB_TOKEN").ok(), |builder, token| {
-            builder.header("Authorization", format!("Bearer {}", token))
-        })
-        .body(Default::default())
-        .map_err(Into::into)
+        .timeout(GITHUB_RELEASE_REQUEST_TIMEOUT);
+    if let Some(token) = token {
+        let mut authorization = HeaderValue::from_str(&format!("Bearer {token}"))?;
+        authorization.set_sensitive(true);
+        request = request.header(AUTHORIZATION, authorization);
+    }
+    Ok(request.body(Default::default())?)
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -185,6 +220,7 @@ mod tests {
         github_api_request,
     };
     use http_client::RequestTimeout;
+    use http_client::http::header::AUTHORIZATION;
 
     #[test]
     fn test_asset_digest_deserialization() {
@@ -211,13 +247,29 @@ mod tests {
 
     #[test]
     fn github_api_requests_have_a_total_deadline() {
-        let request =
-            github_api_request("https://api.github.com/repos/zed-industries/zed/releases").unwrap();
+        let request = github_api_request(
+            "https://api.github.com/repos/zed-industries/zed/releases",
+            None,
+        )
+        .unwrap();
 
         assert_eq!(
             request.extensions().get::<RequestTimeout>(),
             Some(&RequestTimeout(GITHUB_RELEASE_REQUEST_TIMEOUT))
         );
+    }
+
+    #[test]
+    fn github_api_requests_use_sensitive_bearer_authentication() {
+        let request = github_api_request(
+            "https://api.github.com/repos/zed-industries/zed/releases",
+            Some("test-token"),
+        )
+        .unwrap();
+
+        let authorization = request.headers().get(AUTHORIZATION).unwrap();
+        assert_eq!(authorization, "Bearer test-token");
+        assert!(authorization.is_sensitive());
     }
 
     #[test]
